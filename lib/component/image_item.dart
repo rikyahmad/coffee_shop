@@ -12,9 +12,13 @@ class ImageItem extends StatefulWidget {
     required this.item,
     required this.onClick,
     required this.parentKey,
+    required this.height,
+    required this.width,
     this.positionCallback,
   });
 
+  final double height;
+  final double width;
   final int index;
   final bool selected;
   final ImageModel item;
@@ -56,8 +60,8 @@ class _ImageItemState extends State<ImageItem> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 400,
-      height: 400,
+      width: widget.width,
+      height: widget.height,
       color: Colors.transparent,
       alignment: Alignment.center,
       child: GestureDetector(

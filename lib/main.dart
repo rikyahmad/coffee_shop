@@ -4,6 +4,7 @@ import 'package:coffee_shop/component/product_details.dart';
 import 'package:coffee_shop/component/text_scroll.dart';
 import 'package:coffee_shop/component/text_slide.dart';
 import 'package:coffee_shop/component/title_item.dart';
+import 'package:coffee_shop/config.dart';
 import 'package:coffee_shop/helper/dialog_helper.dart';
 import 'package:coffee_shop/model/product.dart';
 import 'package:flutter/material.dart';
@@ -85,7 +86,7 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
 
   late AnimationController detailsController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 500),
+    duration: const Duration(milliseconds: 300),
   );
 
   @override
@@ -123,7 +124,7 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
         appBar: AppBar(
           backgroundColor: Colors.white,
           forceMaterialTransparency: true,
-          toolbarHeight: 65,
+          toolbarHeight: toolbarHeight,
           leadingWidth: 65,
           elevation: 0,
           centerTitle: true,
@@ -267,6 +268,8 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
                           child: Transform.translate(
                             offset: _getDetailsOffset(index, selected),
                             child: ImageItem(
+                              width: productWidth,
+                              height: productHeight,
                               index: index,
                               selected: selected,
                               item: item,
@@ -277,7 +280,6 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
                                   _selectedProduct = products[index];
                                   detailsController.forward(from: 0);
                                 });
-                                //DialogHelper.showToast("Forward to details");
                               },
                             ),
                           ),

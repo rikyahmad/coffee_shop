@@ -1,8 +1,11 @@
 import 'package:coffee_shop/component/image_item.dart';
 import 'package:coffee_shop/component/rounded_text_button.dart';
 import 'package:coffee_shop/model/product.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
+import '../config.dart';
 import 'circle_button.dart';
 
 class ProductDetails extends StatefulWidget {
@@ -24,15 +27,24 @@ class ProductDetails extends StatefulWidget {
 class _ProductDetailsState extends State<ProductDetails>
     with TickerProviderStateMixin {
   final GlobalKey _key = GlobalKey();
+  final double _cartIconSize = 35;
+  final double _paddingHorizontal = 25;
   Offset? widgetPosition;
+  double _addToCartValue = 1;
   double _showValue = 0;
   double _scaleValue = 1;
   SizeModel? _selectedSize;
 
   late final AnimationController _showController = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 500),
+    duration: const Duration(milliseconds: 300),
     reverseDuration: const Duration(milliseconds: 200),
+  );
+
+  late final AnimationController _addToCartController = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+    reverseDuration: const Duration(milliseconds: 500),
   );
 
   final List<SizeModel> sizeList = [
@@ -68,6 +80,11 @@ class _ProductDetailsState extends State<ProductDetails>
 
   @override
   void initState() {
+    _addToCartController.addListener(() {
+      setState(() {
+        _addToCartValue = (1 - _addToCartController.value).clamp(0, 1);
+      });
+    });
     _showController.addListener(() {
       setState(() {
         _showValue = _showController.value;
@@ -95,11 +112,11 @@ class _ProductDetailsState extends State<ProductDetails>
     try {
       final RenderBox renderBox =
           _key.currentContext?.findRenderObject() as RenderBox;
-      widgetPosition = renderBox.localToGlobal(Offset.zero);
-      if (widgetPosition != null) {
+      setState(() {
+        widgetPosition = renderBox.localToGlobal(Offset.zero);
         widget.positionCallback?.call(widgetPosition!);
-        debugPrint("Position : $widgetPosition");
-      }
+        debugPrint("Position Details : $widgetPosition");
+      });
     } on Exception catch (e) {
       debugPrint("Error : $e");
     }
@@ -113,6 +130,7 @@ class _ProductDetailsState extends State<ProductDetails>
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
       color: Colors.white,
       child: Column(
@@ -140,12 +158,46 @@ class _ProductDetailsState extends State<ProductDetails>
                             color: Colors.transparent,
                             child: AnimatedScale(
                               scale: _scaleValue,
-                              duration: const Duration(milliseconds: 500),
-                              child: Image.asset(
-                                widget.selectedProduct?.imageAssets ??
-                                    "assets/images/burger_1.png",
-                                width: 400,
-                                height: 400,
+                              duration: const Duration(milliseconds: 300),
+                              child: Stack(
+                                children: [
+                                  Image.asset(
+                                    widget.selectedProduct?.imageAssets ??
+                                        "assets/images/burger_1.png",
+                                    width: productWidth,
+                                    height: productHeight,
+                                  ),
+                                  Opacity(
+                                    opacity: _addToCartValue,
+                                    child: Transform.translate(
+                                      offset: Offset(
+                                              (1 - _addToCartValue) *
+                                                  ((screenWidth / 2) -
+                                                      (_cartIconSize / 2) -
+                                                      (_paddingHorizontal / 2)),
+                                              ((1 - _addToCartValue) *
+                                                  (-((widgetPosition?.dy ?? 0) +
+                                                      ((productHeight -
+                                                              _cartIconSize) /
+                                                          2) -
+                                                      toolbarHeight)))) /
+                                          (_selectedSize?.scale ?? 1.0),
+                                      child: Transform.scale(
+                                        scale: (_cartIconSize +
+                                                ((productWidth -
+                                                        _cartIconSize) *
+                                                    _addToCartValue)) /
+                                            productWidth,
+                                        child: Image.asset(
+                                          widget.selectedProduct?.imageAssets ??
+                                              "assets/images/burger_1.png",
+                                          width: productWidth,
+                                          height: productHeight,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                ],
                               ),
                             ),
                           ),
@@ -225,7 +277,9 @@ class _ProductDetailsState extends State<ProductDetails>
                         Padding(
                           padding: const EdgeInsets.only(left: 20),
                           child: FloatingActionButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              _addToCartController.forward(from: 0);
+                            },
                             elevation: 3,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50.0),
