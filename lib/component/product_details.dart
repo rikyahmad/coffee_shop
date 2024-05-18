@@ -1,9 +1,8 @@
 import 'package:coffee_shop/component/image_item.dart';
 import 'package:coffee_shop/component/rounded_text_button.dart';
 import 'package:coffee_shop/model/product.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:coffee_shop/multiple_animation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 import '../config.dart';
 import 'circle_button.dart';
@@ -30,21 +29,22 @@ class _ProductDetailsState extends State<ProductDetails>
   final double _cartIconSize = 35;
   final double _paddingHorizontal = 25;
   Offset? widgetPosition;
-  double _addToCartValue = 1;
+
+  //double _addToCartValue = 1;
   double _showValue = 0;
   double _scaleValue = 1;
   SizeModel? _selectedSize;
+
+  late final MultipleAnimation _cartAnimation = MultipleAnimation(
+    vsync: this,
+    duration: const Duration(milliseconds: 500),
+    reverseDuration: const Duration(milliseconds: 500),
+  );
 
   late final AnimationController _showController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 300),
     reverseDuration: const Duration(milliseconds: 200),
-  );
-
-  late final AnimationController _addToCartController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 500),
-    reverseDuration: const Duration(milliseconds: 500),
   );
 
   final List<SizeModel> sizeList = [
@@ -80,11 +80,6 @@ class _ProductDetailsState extends State<ProductDetails>
 
   @override
   void initState() {
-    _addToCartController.addListener(() {
-      setState(() {
-        _addToCartValue = (1 - _addToCartController.value).clamp(0, 1);
-      });
-    });
     _showController.addListener(() {
       setState(() {
         _showValue = _showController.value;
@@ -125,12 +120,12 @@ class _ProductDetailsState extends State<ProductDetails>
   @override
   void dispose() {
     widget.controller.dispose();
+    _cartAnimation.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
     return Container(
       color: Colors.white,
       child: Column(
@@ -167,36 +162,23 @@ class _ProductDetailsState extends State<ProductDetails>
                                     width: productWidth,
                                     height: productHeight,
                                   ),
-                                  Opacity(
-                                    opacity: _addToCartValue,
-                                    child: Transform.translate(
-                                      offset: Offset(
-                                              (1 - _addToCartValue) *
-                                                  ((screenWidth / 2) -
-                                                      (_cartIconSize / 2) -
-                                                      (_paddingHorizontal / 2)),
-                                              ((1 - _addToCartValue) *
-                                                  (-((widgetPosition?.dy ?? 0) +
-                                                      ((productHeight -
-                                                              _cartIconSize) /
-                                                          2) -
-                                                      toolbarHeight)))) /
-                                          (_selectedSize?.scale ?? 1.0),
-                                      child: Transform.scale(
-                                        scale: (_cartIconSize +
-                                                ((productWidth -
-                                                        _cartIconSize) *
-                                                    _addToCartValue)) /
-                                            productWidth,
-                                        child: Image.asset(
-                                          widget.selectedProduct?.imageAssets ??
-                                              "assets/images/burger_1.png",
-                                          width: productWidth,
-                                          height: productHeight,
-                                        ),
-                                      ),
-                                    ),
-                                  )
+                                  ..._cartAnimation.animations.map((animation) {
+                                    return AnimatedBuilder(
+                                      animation: animation,
+                                      builder: (context, child) {
+                                        return _ItemCopy(
+                                          toSize: _cartIconSize,
+                                          value: (1 - animation.value)
+                                              .clamp(0, 1), //addToCartValue
+                                          paddingHorizontal: _paddingHorizontal,
+                                          scale: _selectedSize?.scale,
+                                          sourcePosition: widgetPosition,
+                                          assets: widget
+                                              .selectedProduct?.imageAssets,
+                                        );
+                                      },
+                                    );
+                                  })
                                 ],
                               ),
                             ),
@@ -278,7 +260,19 @@ class _ProductDetailsState extends State<ProductDetails>
                           padding: const EdgeInsets.only(left: 20),
                           child: FloatingActionButton(
                             onPressed: () {
-                              _addToCartController.forward(from: 0);
+                              _cartAnimation.animate(
+                                  callback: ({Function? start, Function? end}) {
+                                if (start != null) {
+                                  setState(() {
+                                    start.call();
+                                  });
+                                }
+                                if (end != null) {
+                                  setState(() {
+                                    end.call();
+                                  });
+                                }
+                              });
                             },
                             elevation: 3,
                             shape: RoundedRectangleBorder(
@@ -306,6 +300,53 @@ class _ProductDetailsState extends State<ProductDetails>
       await Future.delayed(Duration(milliseconds: delay));
     }
     _showController.reverse();
+  }
+}
+
+class _ItemCopy extends StatelessWidget {
+  const _ItemCopy({
+    super.key,
+    required this.toSize,
+    required this.value,
+    required this.paddingHorizontal,
+    this.scale,
+    this.sourcePosition,
+    this.assets,
+  });
+
+  final double toSize;
+  final double value;
+  final double paddingHorizontal;
+  final double? scale;
+  final Offset? sourcePosition;
+  final String? assets;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Opacity(
+      opacity: value,
+      child: Transform.translate(
+        offset: Offset(
+                (1 - value) *
+                    ((screenWidth / 2) -
+                        (toSize / 2) -
+                        (paddingHorizontal / 2)),
+                ((1 - value) *
+                    (-((sourcePosition?.dy ?? 0) +
+                        ((productHeight - toSize) / 2) -
+                        toolbarHeight)))) /
+            (scale ?? 1.0),
+        child: Transform.scale(
+          scale: (toSize + ((productWidth - toSize) * value)) / productWidth,
+          child: Image.asset(
+            assets ?? "assets/images/burger_1.png",
+            width: productWidth,
+            height: productHeight,
+          ),
+        ),
+      ),
+    );
   }
 }
 
