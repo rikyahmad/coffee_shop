@@ -85,6 +85,9 @@ coffee_shop/
 #### Contribution:
 Contributions to the project are welcome! If you encounter any bugs or have ideas for improvements, feel free to open an issue or submit a pull request.
 
+#### License:
+This project is licensed under the [MIT License](LICENSE).
+
 #### Contact:
 For any inquiries or feedback, please contact [riky.fathoni@gmail.com](mailto:riky.fathoni@gmail.com).
 
