@@ -10,7 +10,7 @@ A simple experimental Flutter application for a coffee shop. The app features tw
 
 ## Screenshots
 
-<img src="images/Preview.gif" width="170" />     <img src="images/Screenshot_001.png" width="170" />     <img src="images/Screenshot_004.png" width="170" />     <img src="images/Screenshot_002.png" width="170" />
+<img src="screenshots/preview.gif" width="170" />     <img src="screenshots/screenshot_001.png" width="170" />     <img src="screenshots/screenshot_002.png" width="170" />     <img src="screenshots/screenshot_004.png" width="170" />
 
 
 ## Getting Started
