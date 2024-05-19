@@ -130,7 +130,9 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () {},
+            onPressed: () {
+              DialogHelper.showToast("Back pressed");
+            },
             iconSize: 25,
             color: Colors.black54,
             padding: const EdgeInsets.all(10),
@@ -149,7 +151,9 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
                   colorFilter:
                       const ColorFilter.mode(Colors.black54, BlendMode.srcIn),
                 ),
-                onPressed: () {},
+                onPressed: () {
+                  DialogHelper.showToast("Cart pressed");
+                },
               ),
             ),
           ],
@@ -224,7 +228,7 @@ class _CoffeeAppState extends State<CoffeeApp> with TickerProviderStateMixin {
             opacity: 1 - _detailsAnimateValue,
             child: FloatingActionButton(
               onPressed: () {
-                DialogHelper.showToast("Fab clicked");
+                DialogHelper.showToast("Fab pressed");
               },
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(50.0),

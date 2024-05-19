@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class MultipleAnimation {
+class MultipleAnimationController {
   final TickerProvider vsync;
   final Duration duration;
   final Duration reverseDuration;
   final List<AnimationController> _controllers = [];
   final List<Animation<double>> animations = [];
 
-  MultipleAnimation(
+  MultipleAnimationController(
       {required this.vsync,
       required this.duration,
       required this.reverseDuration});

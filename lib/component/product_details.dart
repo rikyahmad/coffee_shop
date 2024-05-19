@@ -1,7 +1,8 @@
 import 'package:coffee_shop/component/image_item.dart';
 import 'package:coffee_shop/component/rounded_text_button.dart';
+import 'package:coffee_shop/helper/dialog_helper.dart';
 import 'package:coffee_shop/model/product.dart';
-import 'package:coffee_shop/multiple_animation.dart';
+import 'package:coffee_shop/controller/multiple_animation_controller.dart';
 import 'package:flutter/material.dart';
 
 import '../config.dart';
@@ -26,16 +27,21 @@ class ProductDetails extends StatefulWidget {
 class _ProductDetailsState extends State<ProductDetails>
     with TickerProviderStateMixin {
   final GlobalKey _key = GlobalKey();
+  final double _fabSize = 55;
+  final double _buttonHeight = 55;
   final double _cartIconSize = 35;
   final double _paddingHorizontal = 25;
-  Offset? widgetPosition;
+  final double _actionButtonWidth = 160; // rough estimate
 
-  //double _addToCartValue = 1;
+  Offset? widgetPosition;
+  double _dragAmount = 0;
+  int _totalItems = 0;
   double _showValue = 0;
   double _scaleValue = 1;
   SizeModel? _selectedSize;
 
-  late final MultipleAnimation _cartAnimation = MultipleAnimation(
+  late final MultipleAnimationController _cartAnimation =
+      MultipleAnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 500),
     reverseDuration: const Duration(milliseconds: 500),
@@ -87,8 +93,7 @@ class _ProductDetailsState extends State<ProductDetails>
     });
     _showController.addStatusListener((status) {
       if (status == AnimationStatus.dismissed) {
-        _scaleValue = 1;
-        _selectedSize = null;
+        _resetValue();
         //hide
         widget.controller.reverse();
       }
@@ -135,11 +140,15 @@ class _ProductDetailsState extends State<ProductDetails>
               color: Colors.white,
               width: double.infinity,
               child: GestureDetector(
-                onTap: () {
-                  if (!widget.controller.isAnimating) {
-                    setState(() {
-                      _reverse(delay: 500);
-                    });
+                onHorizontalDragStart: (details) {
+                  _dragAmount = 0.0;
+                },
+                onHorizontalDragUpdate: (details) {
+                  _dragAmount += details.primaryDelta ?? 0.0;
+                },
+                onHorizontalDragEnd: (details) {
+                  if (_dragAmount > 90) {
+                    _goBack();
                   }
                 },
                 child: AnimatedBuilder(
@@ -197,7 +206,8 @@ class _ProductDetailsState extends State<ProductDetails>
               child: Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(25, 25, 25, 20),
+                    padding: EdgeInsets.fromLTRB(
+                        _paddingHorizontal, 25, _paddingHorizontal, 20),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: List.generate(sizeList.length, (index) {
@@ -219,6 +229,8 @@ class _ProductDetailsState extends State<ProductDetails>
                                   if (index != 3) {
                                     _scaleValue = item.scale;
                                     _selectedSize = item;
+                                  } else {
+                                    DialogHelper.showToast("More pressed");
                                   }
                                 });
                                 debugPrint('Button Pressed');
@@ -238,49 +250,114 @@ class _ProductDetailsState extends State<ProductDetails>
                       }),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(25, 20, 25, 30),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                        _paddingHorizontal, 20, _paddingHorizontal, 30),
+                    child: Stack(
                       children: [
-                        Expanded(
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: MediaQuery.of(context).size.width -
+                              (_paddingHorizontal * 2) -
+                              (_totalItems > 0
+                                  ? _actionButtonWidth
+                                  : _fabSize + _paddingHorizontal),
                           child: RoundedTextButton(
                             text: 'Customize',
                             onPressed: () {
-                              // Action when button is pressed
-                              debugPrint('Button Pressed');
+                              DialogHelper.showToast("Customize pressed");
                             },
-                            height: 55,
+                            height: _buttonHeight,
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 20, vertical: 5),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 20),
-                          child: FloatingActionButton(
-                            onPressed: () {
-                              _cartAnimation.animate(
-                                  callback: ({Function? start, Function? end}) {
-                                if (start != null) {
-                                  setState(() {
-                                    start.call();
-                                  });
-                                }
-                                if (end != null) {
-                                  setState(() {
-                                    end.call();
-                                  });
-                                }
-                              });
-                            },
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50.0),
+                        Stack(
+                          alignment: Alignment.centerRight,
+                          children: [
+                            AnimatedOpacity(
+                              opacity: _totalItems > 0 ? 0 : 1,
+                              duration: const Duration(milliseconds: 200),
+                              child: AnimatedContainer(
+                                alignment: Alignment.centerRight,
+                                transform: Matrix4.translationValues(
+                                    0, _totalItems > 0 ? _buttonHeight : 0, 0),
+                                duration: const Duration(milliseconds: 200),
+                                child: SizedBox(
+                                  height: _fabSize,
+                                  width: _fabSize,
+                                  child: FloatingActionButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _addToCart(totalItem: _totalItems + 1);
+                                      });
+                                    },
+                                    elevation: 3,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(50.0),
+                                    ),
+                                    backgroundColor: Colors.white,
+                                    child: const Icon(Icons.add),
+                                  ),
+                                ),
+                              ),
                             ),
-                            backgroundColor: Colors.white,
-                            child: const Icon(Icons.add),
-                          ),
+                            AnimatedOpacity(
+                              opacity: _totalItems > 0 ? 1 : 0,
+                              duration: const Duration(milliseconds: 200),
+                              child: AnimatedContainer(
+                                transform: Matrix4.translationValues(
+                                    0, _totalItems > 0 ? 0 : _buttonHeight, 0),
+                                duration: const Duration(milliseconds: 200),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.remove),
+                                      onPressed: () {
+                                        setState(() {
+                                          _addToCart(
+                                              totalItem: _totalItems - 1);
+                                        });
+                                      },
+                                      iconSize: 25,
+                                      color: Colors.black54,
+                                    ),
+                                    Container(
+                                      margin: const EdgeInsets.symmetric(
+                                          horizontal: 5),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10),
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        _totalItems.toString(),
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.black54,
+                                        ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.add),
+                                      onPressed: () {
+                                        setState(() {
+                                          _addToCart(
+                                              totalItem: _totalItems + 1);
+                                        });
+                                      },
+                                      iconSize: 25,
+                                      color: Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          ],
                         )
                       ],
                     ),
@@ -301,11 +378,44 @@ class _ProductDetailsState extends State<ProductDetails>
     }
     _showController.reverse();
   }
+
+  void _resetValue() {
+    _scaleValue = 1;
+    _showValue = 0;
+    _totalItems = 0;
+    _dragAmount = 0;
+    _selectedSize = null;
+  }
+
+  void _addToCart({required int totalItem}) {
+    if (totalItem > _totalItems) {
+      _cartAnimation.animate(callback: ({Function? start, Function? end}) {
+        if (start != null) {
+          setState(() {
+            start.call();
+          });
+        }
+        if (end != null) {
+          setState(() {
+            end.call();
+          });
+        }
+      });
+    }
+    _totalItems = totalItem;
+  }
+
+  void _goBack() {
+    if (!widget.controller.isAnimating) {
+      setState(() {
+        _reverse(delay: 500);
+      });
+    }
+  }
 }
 
 class _ItemCopy extends StatelessWidget {
   const _ItemCopy({
-    super.key,
     required this.toSize,
     required this.value,
     required this.paddingHorizontal,
