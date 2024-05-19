@@ -88,4 +88,4 @@ Contributions to the project are welcome! If you encounter any bugs or have idea
 #### Contact:
 For any inquiries or feedback, please contact [riky.fathoni@gmail.com](mailto:riky.fathoni@gmail.com).
 
-Thank you for using Coffee Shop App! Happy task managing! 🚀
+Thank you for using Coffee Shop App! Enjoy exploring! 🚀
